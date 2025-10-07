@@ -676,6 +676,10 @@ class Git(FetchMethod):
         else:
             source_error.append("clone directory not available or not up to date: " + ud.clonedir)
 
+        if need_lfs and ud.noshared:
+            # LFS objects must be copied
+            runfetchcmd("cp -rv %s/lfs %s/.git/" % (ud.clonedir, destdir), d)
+
         if not source_found:
             if ud.shallow:
                 if os.path.exists(ud.fullshallow):
