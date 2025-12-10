@@ -989,21 +989,27 @@ class Git(FetchMethod):
         """
         rev = ud.revision
         localpath = ud.localpath
+        bb.debug(1, f"rev={rev} localpath={localpath}")
         rev_file = os.path.join(localpath, "oe-gitpkgv_" + rev)
         if not os.path.exists(localpath):
+            bb.debug(1, "no localpath")
             commits = None
         else:
             if not os.path.exists(rev_file) or not os.path.getsize(rev_file):
+                bb.debug(1, "generating rev_file")
                 commits = bb.fetch2.runfetchcmd(
                         "git rev-list %s -- | wc -l" % shlex.quote(rev),
                         d, quiet=True).strip().lstrip('0')
                 if commits:
                     open(rev_file, "w").write("%d\n" % int(commits))
             else:
+                bb.debug(1, "reading rev_file")
                 commits = open(rev_file, "r").readline(128).strip()
         if commits:
+            bb.debug(1, "commmits={commmits}")
             return False, "%s+%s" % (commits, rev[:7])
         else:
+            bb.debug(1, "no commits")
             return True, str(rev)
 
     def checkstatus(self, fetch, ud, d):

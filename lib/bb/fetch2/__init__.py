@@ -15,6 +15,7 @@ BitBake build tools.
 import os, re
 import signal
 import logging
+import traceback
 import urllib.request, urllib.parse, urllib.error
 if 'git' not in urllib.parse.uses_netloc:
     urllib.parse.uses_netloc.append('git')
@@ -787,6 +788,7 @@ def _get_srcrev(d, method_name='sortable_revision'):
     that fetcher provides a method with the given name and the same signature as sortable_revision.
     """
 
+    bb.debug(1, f"_get_srcrev({method_name!r})")
     d.setVar("__BBSRCREV_SEEN", "1")
     recursion = d.getVar("__BBINSRCREV")
     if recursion:
@@ -795,25 +797,34 @@ def _get_srcrev(d, method_name='sortable_revision'):
 
     scms = []
     revs = []
+    bb.debug(1, f"SRC_URI={d.getVar('SRC_URI')!r}, stack:\n{'\n'.join(traceback.format_stack())}")
+
     fetcher = Fetch(d.getVar('SRC_URI').split(), d)
     urldata = fetcher.ud
+    bb.debug(1, f"urldata={urldata}")
     for u in urldata:
+        #bb.debug(1, f"urldata[{u}]: {urldata[u].method} names={urldata[u].names}")
         if urldata[u].method.supports_srcrev():
             scms.append(u)
 
+    bb.debug(1, f"scms = {scms}")
     if not scms:
         d.delVar("__BBINSRCREV")
         return "", revs
 
 
     if len(scms) == 1:
+        bb.debug(1, f"single scm")
         autoinc, rev = getattr(urldata[scms[0]].method, method_name)(urldata[scms[0]], d, urldata[scms[0]].name)
+        bb.debug(1, f"autoinc={autoinc} rev={rev}")
         revs.append(rev)
         if len(rev) > 10:
             rev = rev[:10]
         d.delVar("__BBINSRCREV")
         if autoinc:
+            bb.debug(1, f"-> {"AUTOINC+" + rev, revs}")
             return "AUTOINC+" + rev, revs
+        bb.debug(1, f"-> {rev, revs}")
         return rev, revs
 
     #
@@ -859,6 +870,7 @@ def get_pkgv_string(d, method_name='sortable_revision'):
 
 def get_srcrev(d, method_name='sortable_revision'):
     pkgv, revs = _get_srcrev(d, method_name=method_name)
+    bb.debug(1, f"pkgv={pkgv} revs={revs}")
     if not pkgv:
         raise FetchError("SRCREV was used yet no valid SCM was found in SRC_URI")
     return pkgv

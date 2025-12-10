@@ -20,6 +20,7 @@ import builtins
 import copy
 import re
 import sys
+import traceback
 from collections.abc import MutableMapping
 import logging
 import hashlib
@@ -134,6 +135,8 @@ class VariableParse:
         else:
             varname = '<expansion>'
         codeobj = compile(code.strip(), varname, "eval")
+        if "get_srcrev" in code:
+            bb.debug(1, f"compiled {codeobj} from {code!r}")
 
         parser = bb.codeparser.PythonParser(self.varname, logger)
         parser.parse_python(code)
@@ -781,10 +784,20 @@ class DataSmart(MutableMapping):
                 return None
             cachename = var + "[" + flag + "]"
 
+        if var == "SRC_URI":
+            bb.debug(1, f"{id(self):x}.getVarFlag({cachename})")
+            if cachename in self.expand_cache:
+                bb.debug(1, " ... in cache")
+            else:
+                bb.debug(1, " ... NOT in cache")
         if not expand and retparser and cachename in self.expand_cache and not noweakdefault:
+            if var == "SRC_URI":
+                bb.debug(1, f" ... (unexp) {self.expand_cache[cachename].unexpanded_value}")
             return self.expand_cache[cachename].unexpanded_value, self.expand_cache[cachename]
 
         if expand and cachename in self.expand_cache and not noweakdefault:
+            if var == "SRC_URI":
+                bb.debug(1, f" ... (exp) {self.expand_cache[cachename].value}")
             return self.expand_cache[cachename].value
 
         local_var = self._findVar(var)
@@ -905,6 +918,8 @@ class DataSmart(MutableMapping):
                 parser.value = value
 
         if parser and not noweakdefault:
+            if var == "SRC_URI":
+                bb.debug(1, f"{id(self):x}.cache({cachename}) = {parser.value}")
             self.expand_cache[cachename] = parser
 
         if retparser:
@@ -1005,6 +1020,7 @@ class DataSmart(MutableMapping):
         """
         # we really want this to be a DataSmart...
         data = DataSmart()
+        bb.debug(1, f"createCopy({id(self):x}) -> {id(data):x}, stack:\n{'\n'.join(traceback.format_stack())}")
         data.dict["_data"] = self.dict
         data.varhistory = self.varhistory.copy()
         data.varhistory.dataroot = data

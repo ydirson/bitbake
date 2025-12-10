@@ -321,6 +321,7 @@ def build_dependencies(key, keys, mod_funcs, shelldeps, varflagsexcl, ignored_va
                 deps = deps | (keys & parser.execs)
                 value = handle_contains(value, parser.contains, exclusions, d)
             else:
+                bb.debug(1, f"build_dependencies: SRC_URI={d.getVar('SRC_URI')!r}")
                 value, parsedvar = codeparsedata.getVarFlag(key, "_content", False, retparser=True)
                 parser = bb.codeparser.ShellParser(key, logger)
                 parser.parse_shell(parsedvar.value)
@@ -374,6 +375,7 @@ def build_dependencies(key, keys, mod_funcs, shelldeps, varflagsexcl, ignored_va
     #d.setVarFlag(key, "vardeps", deps)
 
 def generate_dependencies(d, ignored_vars):
+    bb.debug(1, "generate_dependencies")
 
     mod_funcs = set(bb.codeparser.modulecode_deps.keys())
     keys = set(key for key in d if not key.startswith("__")) | mod_funcs
@@ -390,6 +392,7 @@ def generate_dependencies(d, ignored_vars):
 
     tasklist = d.getVar('__BBTASKS', False) or []
     for task in tasklist:
+        bb.debug(1, f"generate_dependencies: task={task} SRC_URI={d.getVar('SRC_URI')!r}")
         deps[task], values[task] = build_dependencies(task, keys, mod_funcs, shelldeps, varflagsexcl, ignored_vars, d, codeparserd)
         newdeps = deps[task]
         seen = set()
@@ -399,6 +402,7 @@ def generate_dependencies(d, ignored_vars):
             newdeps = set()
             for dep in nextdeps:
                 if dep not in deps:
+                    bb.debug(1, f"generate_dependencies: task={task} dep={dep} SRC_URI={d.getVar('SRC_URI')!r}")
                     deps[dep], values[dep] = build_dependencies(dep, keys, mod_funcs, shelldeps, varflagsexcl, ignored_vars, d, codeparserd)
                 newdeps |=  deps[dep]
             newdeps -= seen

@@ -486,6 +486,7 @@ def better_eval(source, locals, extraglobals = None):
         ctx = copy.copy(ctx)
         for g in extraglobals:
             ctx[g] = extraglobals[g]
+    bb.debug(1, f"better_eval({source!r})") # , {ctx!r}
     return eval(source, ctx, locals)
 
 @contextmanager
