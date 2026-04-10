@@ -852,13 +852,13 @@ class RunQueueData:
         revdeps = {}
         deps = {}
         cumulativedeps = {}
-        for tid in self.runtaskentries:
-            deps[tid] = set(self.runtaskentries[tid].depends)
+        for tid, entry in self.runtaskentries.items():
+            deps[tid] = set(entry.depends)
             revdeps[tid] = set()
             cumulativedeps[tid] = set()
         # Generate a temp list of reverse dependencies
-        for tid in self.runtaskentries:
-            for dep in self.runtaskentries[tid].depends:
+        for tid, entry in self.runtaskentries.items(): # FIXME merge in above loop
+            for dep in entry.depends:
                 revdeps[dep].add(tid)
         # Find the dependency chain endpoints
         endpoints = set()
@@ -886,9 +886,7 @@ class RunQueueData:
         extradeps = True
         while extradeps:
             extradeps = 0
-            for tid in recursivetasks:
-                tasknames = recursivetasks[tid]
-
+            for tid, tasknames in recursivetasks.items():
                 totaldeps = set(self.runtaskentries[tid].depends)
                 if tid in recursiveitasks:
                     totaldeps.update(recursiveitasks[tid])
