@@ -24,9 +24,12 @@ import signal
 import prserv.serv
 import json
 import pickle
+from tblib import pickling_support
 import codecs
 import hashserv
 import ctypes
+
+pickling_support.install()
 
 logger      = logging.getLogger("BitBake")
 collectlog  = logging.getLogger("BitBake.Collection")
